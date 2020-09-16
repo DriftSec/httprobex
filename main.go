@@ -234,8 +234,8 @@ func GetDetails(req *http.Request, resp *http.Response) string {                
 		if t.Type == html.StartTagToken && t.Data == "title" {
 			if z.Next() == html.TextToken {
 				title = strings.TrimSpace(z.Token().Data)
-				title = strings.Replace(title, "\n\r\t","",10)
-				title = strings.Join(strings.Fields(title), " ") // cheat to combine whitespaces
+				// title = strings.Replace(title, "\n\r\t","",10)
+				title = strings.Join(strings.Fields(title), " ") // cheat to combine whitespaces and clean up title
 				size = "0"
 				if resp.ContentLength == -1 {
 					size = "0B"
