@@ -218,44 +218,48 @@ func main() {
 
 func GetDetails(req *http.Request, resp *http.Response) string {                // Added GetDetails
 	z := html.NewTokenizer(resp.Body)
+	size := "0B"
+	status := resp.StatusCode
+	title := ""
+	server := resp.Header.Get("Server")
 
 	for {
 		tt := z.Next()
 		if tt == html.ErrorToken {
-			return "[]"
+			break
 		}
 
 		t := z.Token()
 
 		if t.Type == html.StartTagToken && t.Data == "title" {
 			if z.Next() == html.TextToken {
-				title := strings.TrimSpace(z.Token().Data)
-				var size = "0"
+				title = strings.TrimSpace(z.Token().Data)
+				size = "0"
 				if resp.ContentLength == -1 {
 					size = "0B"
 				} else {
 					size = fmt.Sprintf("%dB", resp.ContentLength)
 				}
-                    server := resp.Header.Get("Server")
-				return fmt.Sprintf("[%d] [%s] [%s] [%s]",resp.StatusCode, size, title, server)
+
+				// return fmt.Sprintf("[%d] [%s] [%s] [%s]",resp.StatusCode, size, title, server)
 			}
 		}
 
 	}
-     return "[]"
+     return fmt.Sprintf("[%d] [%s] [%s] [%s]",status, size, title, server)
 }
 
 func isListening(client *http.Client, url, method string) (bool, string) {      // Added 2nd return (string) for GetDetails
 
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		return false, ""
+		return false, "1"
 	}
 
 	req.Header.Add("Connection", "close")
 	req.Close = true
 
-     data := ""
+     data := "3"
 	resp, err := client.Do(req)
 	if resp != nil {
           data = GetDetails(req, resp)                                          // Added for GetDetails
@@ -264,7 +268,7 @@ func isListening(client *http.Client, url, method string) (bool, string) {      
 	}
 
 	if err != nil {
-		return false, ""
+		return false, "2"
 	}
 
 	return true, data                                                          // Added 2nd return for GetDetails
