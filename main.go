@@ -217,12 +217,15 @@ func main() {
 }
 
 func GetDetails(req *http.Request, resp *http.Response) string {                // Added GetDetails
-	z := html.NewTokenizer(resp.Body)
+	title := ""
 	size := "0B"
 	status := resp.StatusCode
-	title := ""
 	server := resp.Header.Get("Server")
+	if resp.ContentLength > 0 {
+		size = fmt.Sprintf("%dB", resp.ContentLength)
+	}
 
+	z := html.NewTokenizer(resp.Body)
 	for {
 		tt := z.Next()
 		if tt == html.ErrorToken {
@@ -234,18 +237,9 @@ func GetDetails(req *http.Request, resp *http.Response) string {                
 		if t.Type == html.StartTagToken && t.Data == "title" {
 			if z.Next() == html.TextToken {
 				title = strings.TrimSpace(z.Token().Data)
-				// title = strings.Replace(title, "\n\r\t","",10)
-				title = strings.Join(strings.Fields(title), " ") // cheat to combine whitespaces and clean up title
-				size = "0"
-				if resp.ContentLength == -1 {
-					size = "0B"
-				} else {
-					size = fmt.Sprintf("%dB", resp.ContentLength)
-				}
-
+				title = strings.Join(strings.Fields(title), " ") // combine whitespaces and clean up title
 			}
 		}
-
 	}
      return fmt.Sprintf("[%d] [%s] [%s] [%s]",status, size, title, server)
 }
