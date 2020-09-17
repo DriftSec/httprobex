@@ -17,6 +17,7 @@ import (
 )
 
 type probeArgs []string
+var noDetails bool
 
 func (p *probeArgs) Set(val string) error {
 	*p = append(*p, val)
@@ -52,6 +53,9 @@ func main() {
 	// HTTP method to use
 	var method string
 	flag.StringVar(&method, "method", "GET", "HTTP method to use")
+
+	// get details flag
+	flag.BoolVar(&noDetails, "no-details", false, "dont get response details (status code, size, title, server header)")
 
 	flag.Parse()
 
@@ -248,22 +252,24 @@ func isListening(client *http.Client, url, method string) (bool, string) {      
 
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		return false, "1"
+		return false, ""
 	}
 
 	req.Header.Add("Connection", "close")
 	req.Close = true
 
-     data := "3"
+     data := ""
 	resp, err := client.Do(req)
 	if resp != nil {
-          data = GetDetails(req, resp)                                          // Added for GetDetails
+		if ! noDetails{
+          	data = GetDetails(req, resp)
+		}                                         // Added for GetDetails
 		io.Copy(ioutil.Discard, resp.Body)
 		resp.Body.Close()
 	}
 
 	if err != nil {
-		return false, "2"
+		return false, ""
 	}
 
 	return true, data                                                          // Added 2nd return for GetDetails
