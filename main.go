@@ -13,10 +13,12 @@ import (
 	"strings"
 	"sync"
 	"time"
-     "golang.org/x/net/html" // Added for GetDetails
+
+	"golang.org/x/net/html" // Added for GetDetails
 )
 
 type probeArgs []string
+
 var noDetails bool
 
 func (p *probeArgs) Set(val string) error {
@@ -41,6 +43,10 @@ func main() {
 	// skip default probes flag
 	var skipDefault bool
 	flag.BoolVar(&skipDefault, "s", false, "skip the default probes (http:80 and https:443)")
+
+	// skip default probes flag
+	var followRedirects bool
+	flag.BoolVar(&followRedirects, "r", false, "follow redirects")
 
 	// timeout flag
 	var to int
@@ -83,6 +89,10 @@ func main() {
 		Timeout:       timeout,
 	}
 
+	if followRedirects == true {
+		client.CheckRedirect = nil
+	}
+
 	// domain/port pairs are initially sent on the httpsURLs channel.
 	// If they are listening and the --prefer-https flag is set then
 	// no HTTP check is performed; otherwise they're put onto the httpURLs
@@ -101,9 +111,9 @@ func main() {
 
 				// always try HTTPS first
 				withProto := "https://" + url
-                    Listening, data := isListening(client, withProto, method) // Added for GetDetails
-                    // if isListening(client, withProto, method) {
-                    if  Listening {                                           // Modified for GetDetails
+				Listening, data := isListening(client, withProto, method) // Added for GetDetails
+				// if isListening(client, withProto, method) {
+				if Listening { // Modified for GetDetails
 					output <- withProto + " " + data
 
 					// skip trying HTTP if --prefer-https is set
@@ -128,9 +138,9 @@ func main() {
 			for url := range httpURLs {
 				withProto := "http://" + url
 
-                    Listening, data := isListening(client, withProto, method) // Added for GetDetails
-                    // if isListening(client, withProto, method) {
-                    if  Listening {                                           // Modified for GetDetails
+				Listening, data := isListening(client, withProto, method) // Added for GetDetails
+				// if isListening(client, withProto, method) {
+				if Listening { // Modified for GetDetails
 					output <- withProto + " " + data
 					continue
 				}
@@ -220,7 +230,7 @@ func main() {
 	outputWG.Wait()
 }
 
-func GetDetails(req *http.Request, resp *http.Response) string {                // Added GetDetails
+func GetDetails(req *http.Request, resp *http.Response) string { // Added GetDetails
 	title := ""
 	size := "0B"
 	status := resp.StatusCode
@@ -238,17 +248,17 @@ func GetDetails(req *http.Request, resp *http.Response) string {                
 
 		t := z.Token()
 
-		if t.Type == html.StartTagToken && t.Data == "title" {
+		if t.Type == html.StartTagToken && strings.ToLower(t.Data) == "title" {
 			if z.Next() == html.TextToken {
 				title = strings.TrimSpace(z.Token().Data)
 				title = strings.Join(strings.Fields(title), " ") // combine whitespaces and clean up title
 			}
 		}
 	}
-     return fmt.Sprintf("[%d] [%s] [%s] [%s]",status, size, title, server)
+	return fmt.Sprintf("[%d] [%s] [%s] [%s]", status, size, title, server)
 }
 
-func isListening(client *http.Client, url, method string) (bool, string) {      // Added 2nd return (string) for GetDetails
+func isListening(client *http.Client, url, method string) (bool, string) { // Added 2nd return (string) for GetDetails
 
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
@@ -258,12 +268,12 @@ func isListening(client *http.Client, url, method string) (bool, string) {      
 	req.Header.Add("Connection", "close")
 	req.Close = true
 
-     data := ""
+	data := ""
 	resp, err := client.Do(req)
 	if resp != nil {
-		if ! noDetails{
-          	data = GetDetails(req, resp)
-		}                                         // Added for GetDetails
+		if !noDetails {
+			data = GetDetails(req, resp)
+		} // Added for GetDetails
 		io.Copy(ioutil.Discard, resp.Body)
 		resp.Body.Close()
 	}
@@ -272,5 +282,5 @@ func isListening(client *http.Client, url, method string) (bool, string) {      
 		return false, ""
 	}
 
-	return true, data                                                          // Added 2nd return for GetDetails
+	return true, data // Added 2nd return for GetDetails
 }
