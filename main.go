@@ -255,7 +255,11 @@ func GetDetails(req *http.Request, resp *http.Response) string { // Added GetDet
 			}
 		}
 	}
-	return fmt.Sprintf("[%d] [%s] [%s] [%s]", status, size, title, server)
+	tlsservername := ""
+	if req.URL.Scheme == "https" {
+		tlsservername = resp.TLS.ServerName
+	}
+	return fmt.Sprintf("[%d] [%s] [%s] [%s] [%s]", status, size, title, server, tlsservername)
 }
 
 func isListening(client *http.Client, url, method string) (bool, string) { // Added 2nd return (string) for GetDetails
