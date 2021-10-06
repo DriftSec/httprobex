@@ -255,15 +255,14 @@ func GetDetails(req *http.Request, resp *http.Response) string { // Added GetDet
 			}
 		}
 	}
-	tlsservername := ""
+	cn := ""
 	if req.URL.Scheme == "https" {
-		tlsservername = resp.TLS.ServerName
+		cn = strings.ToLower(resp.TLS.PeerCertificates[0].Subject.CommonName)
 	}
-	return fmt.Sprintf("[%d] [%s] [%s] [%s] [%s]", status, size, title, server, tlsservername)
+	return fmt.Sprintf("[%d] [%s] [%s] [%s] [%s]", status, size, title, server, cn)
 }
 
 func isListening(client *http.Client, url, method string) (bool, string) { // Added 2nd return (string) for GetDetails
-
 	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
 		return false, ""
